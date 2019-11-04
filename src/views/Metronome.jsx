@@ -1,4 +1,7 @@
 import React from 'react'
+import { connect } from 'react-redux'
+
+import { setBpm, startPlaying, stopPlaying, setCount } from 'actions/timer'
 
 import './Metronome.css'
 import click1 from 'sounds/click1.wav'
@@ -7,66 +10,59 @@ import click2 from 'sounds/click2.wav'
 class Metronome extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {
-      bpm: 100,
-      playing: false,
-      count: 0,
-      beatsPerMeasure: 4,
-    }
-
     this.click1 = new Audio(click1)
     this.click2 = new Audio(click2)
   }
 
   playClick = () => {
-    const { count, beatsPerMeasure } = this.state
+    const { count, beatsPerMeasure } = this.props.timer
     if (count % beatsPerMeasure === 0) {
       this.click2.play()
     } else {
       this.click1.play()
     }
     // track the beat we are on
-    this.setState(
-      state => ({
-        count: (state.count + 1) % state.beatsPerMeasure,
-      }),
-      () => console.log(this.state.count)
-    )
+    this.props.setCount()
   }
 
   handleSlider = e => {
+    const {
+      setBpm,
+      timer: { playing },
+    } = this.props
     const bpm = e.target.value
-    if (this.state.playing) {
+
+    if (playing) {
       // stop old timer and set new one
-      this.setState({ bpm }, clearInterval(this.timer))
+      setBpm(bpm)
+      clearInterval(this.timer)
       this.timer = setInterval(this.playClick, (60 / bpm) * 1000)
     } else {
       // update bpm
-      this.setState({ bpm })
+      setBpm(bpm)
     }
   }
 
   handleButton = () => {
-    if (!this.state.playing) {
+    const {
+      startPlaying,
+      stopPlaying,
+      timer: { bpm, playing },
+    } = this.props
+
+    if (!playing) {
       // Start the timer
-      this.timer = setInterval(this.playClick, (60 / this.state.bpm) * 1000)
-      this.setState(
-        {
-          count: 0,
-          playing: true,
-          // Play a click "immediately" (after setState finishes)
-        },
-        this.playClick
-      )
+      this.timer = setInterval(this.playClick, (60 / bpm) * 1000)
+      startPlaying()
     } else {
       // Stop the timer
-      this.setState({ playing: false, count: 0 })
+      stopPlaying()
       clearInterval(this.timer)
     }
   }
 
   render() {
-    const { bpm, playing } = this.state
+    const { bpm, playing } = this.props.timer
 
     return (
       <div className="metronome">
@@ -91,4 +87,11 @@ class Metronome extends React.Component {
   }
 }
 
-export default Metronome
+const mapStateToProps = state => ({
+  timer: state.timer,
+})
+
+export default connect(
+  mapStateToProps,
+  { setBpm, startPlaying, stopPlaying, setCount }
+)(Metronome)
