@@ -12,7 +12,6 @@ class Metronome extends React.Component {
       playing: false,
       count: 0,
       beatsPerMeasure: 4,
-      run: null,
     }
 
     this.click1 = new Audio(click1)
